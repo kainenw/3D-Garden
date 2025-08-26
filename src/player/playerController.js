@@ -132,6 +132,7 @@ export class PlayerController {
       this.pointerLocked = document.pointerLockElement === this.domElement;
     };
     document.addEventListener('pointerlockchange', this.handlePointerLockChange);
+    this.handlePointerLockChange();
 
     this.handleMouseMove = (e) => this.onMouseMove(e);
     document.addEventListener('mousemove', this.handleMouseMove);

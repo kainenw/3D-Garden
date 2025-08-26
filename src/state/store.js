@@ -61,6 +61,7 @@ loadState().then((data) => {
   if (data) {
     useStore.setState(data);
   }
+  useStore.setState({ isPaused: false });
 });
 
 useStore.subscribe((state) => {
