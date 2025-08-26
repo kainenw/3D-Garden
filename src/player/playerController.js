@@ -5,7 +5,7 @@ import * as CANNON from 'cannon-es';
 // pointer-lock mouse look. Integrates with the Physics wrapper.
 
 export class PlayerController {
-  constructor(camera, domElement, physics, plantManager) {
+  constructor(camera, domElement, physics, plantManager, ground) {
     this.camera = camera;
     this.domElement = domElement;
     this.physics = physics;
@@ -21,6 +21,7 @@ export class PlayerController {
     this.jumpRequested = false;
 
     this.plantManager = plantManager;
+    this.ground = ground;
     this.raycaster = new THREE.Raycaster();
     window.addEventListener('keydown', (e) => {
       if (e.code === 'KeyE') this.interact();
@@ -129,7 +130,7 @@ export class PlayerController {
       return;
     }
 
-    const groundHits = this.raycaster.intersectObject(this.plantManager.ground);
+    const groundHits = this.raycaster.intersectObject(this.ground);
     if (groundHits.length > 0) {
       const position = groundHits[0].point;
       this.plantManager.plantAt(position, 'daisy');
