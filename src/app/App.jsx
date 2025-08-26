@@ -82,7 +82,10 @@ export class App {
       }
     }, 3000);
 
-    window.addEventListener('beforeunload', () => this.stop());
+    window.addEventListener('beforeunload', () => {
+      this.stop();
+      this.dispose();
+    });
 
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -98,15 +101,26 @@ export class App {
   loop() {
     requestAnimationFrame(() => this.loop());
     const dt = Math.min(this.clock.getDelta(), 0.033);
-    if (!useStore.getState().isPaused) {
-      this.physics.step(dt);
-      this.player.update(dt);
-      this.plantManager.update(dt);
-      this.sceneManager.update(dt);
-    } else {
-      this.player.update(dt);
+    console.log('Loop start', { dt });
+    try {
+      if (!useStore.getState().isPaused) {
+        console.log('Physics step');
+        this.physics.step(dt);
+        console.log('Player update');
+        this.player.update(dt);
+        console.log('PlantManager update');
+        this.plantManager.update(dt);
+        console.log('SceneManager update');
+        this.sceneManager.update(dt);
+      } else {
+        console.log('Paused: Player update only');
+        this.player.update(dt);
+      }
+      console.log('Renderer render');
+      this.renderer.render(this.scene, this.camera);
+    } catch (e) {
+      console.error('Error in loop:', e);
     }
-    this.renderer.render(this.scene, this.camera);
   }
 
   stop() {
@@ -114,6 +128,7 @@ export class App {
       clearInterval(this.saveInterval);
       this.saveInterval = null;
     }
+  }
   dispose() {
     this.player.dispose();
   }
