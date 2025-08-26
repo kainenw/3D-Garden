@@ -24,7 +24,7 @@ export class App {
     this.camera.position.set(0, 1.6, 5);
 
     this.physics = new Physics();
-    this.sceneManager = new SceneManager(this.scene, this.renderer);
+    this.sceneManager = new SceneManager(this.scene, this.renderer, this.physics);
     this.plantManager = new PlantManager(this.scene);
     this.player = new PlayerController(this.camera, this.renderer.domElement, this.physics, this.plantManager);
     this.inventoryUI = new InventoryUI();
