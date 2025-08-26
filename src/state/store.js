@@ -59,7 +59,11 @@ export const useStore = create((set, get) => ({
 
 loadState().then((data) => {
   if (data) {
-    useStore.setState(data);
+    const mergedBindings = {
+      ...useStore.getState().keyBindings,
+      ...(data.keyBindings || {}),
+    };
+    useStore.setState({ ...data, keyBindings: mergedBindings });
   }
   useStore.setState({ isPaused: false });
 });
