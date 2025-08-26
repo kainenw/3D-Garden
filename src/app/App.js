@@ -53,6 +53,8 @@ export class App {
           plant.stageIndex = data.stageIndex;
           plant.growthPoints = data.growthPoints;
           plant.hydration = data.hydration;
+          plant.fertility = data.fertility ?? plant.fertility;
+          this.plantManager.soil.set(plant.soilKey, plant.fertility);
           this.scene.remove(plant.mesh);
           plant.mesh = this.plantManager.createMesh(plant.species, plant.stageIndex);
           plant.mesh.position.copy(plant.position);
@@ -69,6 +71,7 @@ export class App {
           stageIndex: p.stageIndex,
           hydration: p.hydration,
           growthPoints: p.growthPoints,
+          fertility: p.fertility,
         }));
         savePlants(data);
         this.plantsDirty = false;
