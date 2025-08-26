@@ -47,6 +47,14 @@ export class PauseMenu {
     this.sensitivityInput = this.container.querySelector('#sensitivity');
     this.bobInput = this.container.querySelector('#bob');
 
+    // Track the currently active key rebinding handler so only one is
+    // listening at a time.
+    this.currentKeyHandler = null;
+    this.cancelHandler = null;
+    this.cancelTimeout = null;
+    this.activeButton = null;
+    this.activeAction = null;
+
     const state = useStore.getState();
     this.volumeInput.value = state.volume;
     this.sensitivityInput.value = state.mouseSensitivity;
@@ -72,6 +80,28 @@ export class PauseMenu {
     });
   }
 
+  // Remove any active keydown/cancel listeners and reset the button label
+  cleanupKeyHandler() {
+    if (this.currentKeyHandler) {
+      window.removeEventListener('keydown', this.currentKeyHandler);
+      this.currentKeyHandler = null;
+    }
+    if (this.cancelHandler) {
+      window.removeEventListener('click', this.cancelHandler);
+      this.cancelHandler = null;
+    }
+    if (this.cancelTimeout) {
+      clearTimeout(this.cancelTimeout);
+      this.cancelTimeout = null;
+    }
+    if (this.activeButton) {
+      const bindings = useStore.getState().keyBindings;
+      this.activeButton.textContent = bindings[this.activeAction];
+      this.activeButton = null;
+      this.activeAction = null;
+    }
+  }
+
   renderBindings(bindings) {
     this.bindingsDiv.innerHTML = '<h3>Key Bindings</h3>';
     Object.keys(bindings).forEach((action) => {
@@ -80,14 +110,29 @@ export class PauseMenu {
       const button = document.createElement('button');
       button.textContent = bindings[action];
       button.addEventListener('click', () => {
+        this.cleanupKeyHandler();
+        this.activeButton = button;
+        this.activeAction = action;
         button.textContent = 'Press key';
+
         const onKey = (e) => {
           e.preventDefault();
           useStore.getState().setKeyBinding(action, e.code);
-          button.textContent = e.code;
-          window.removeEventListener('keydown', onKey);
+          this.cleanupKeyHandler();
         };
+
+        const cancel = (e) => {
+          if (e.target === button) return; // ignore clicks on the button itself
+          this.cleanupKeyHandler();
+        };
+
         window.addEventListener('keydown', onKey);
+        // Delay attaching the cancel handler so the initiating click isn't caught
+        setTimeout(() => window.addEventListener('click', cancel), 0);
+        this.cancelTimeout = setTimeout(cancel, 5000);
+
+        this.currentKeyHandler = onKey;
+        this.cancelHandler = cancel;
       });
       row.appendChild(button);
       this.bindingsDiv.appendChild(row);
