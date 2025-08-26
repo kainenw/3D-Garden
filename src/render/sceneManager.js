@@ -8,6 +8,9 @@ export class SceneManager {
     this.renderer = renderer;
     this.physics = physics;
 
+    this.occluders = [];
+    this.raycaster = new THREE.Raycaster();
+
     this._initSky();
     this._initLights();
     this._initGround();
@@ -15,6 +18,7 @@ export class SceneManager {
     this._initNavMesh();
 
     this.elapsed = 0;
+    this.sunIntensity = 0;
   }
 
   _initSky() {
@@ -41,6 +45,7 @@ export class SceneManager {
     mesh.receiveShadow = true;
     this.scene.add(mesh);
     this.ground = mesh;
+    this.occluders.push(mesh);
 
     if (this.physics) {
       const body = new Body({ mass: 0 });
@@ -64,6 +69,7 @@ export class SceneManager {
       wall.castShadow = true;
       wall.receiveShadow = true;
       this.scene.add(wall);
+      this.occluders.push(wall);
 
       if (this.physics) {
         const shape = new Box(new Vec3(30, height / 2, thickness / 2));
@@ -98,16 +104,31 @@ export class SceneManager {
 
   update(dt) {
     // Rotate the sun to simulate a simple day/night cycle.
-    const cycle = 60; // seconds for a full rotation
+    const cycle = 600; // seconds for a full rotation
     this.elapsed += dt;
     const angle = (this.elapsed / cycle) * Math.PI * 2;
     const radius = 80;
-    this.sun.position.set(Math.sin(angle) * radius, Math.cos(angle) * radius, Math.cos(angle) * radius);
+    this.sun.position.set(
+      Math.sin(angle) * radius,
+      Math.cos(angle) * radius,
+      Math.cos(angle) * radius
+    );
     this.sun.lookAt(0, 0, 0);
 
-    // Adjust intensity to mimic night time when below horizon
-    this.sun.intensity = Math.max(0, Math.cos(angle));
-    this.ambientLight.intensity = 0.2 + 0.3 * this.sun.intensity;
+    // Compute intensity over the full cycle and cache it for queries
+    this.sunIntensity = Math.max(0, Math.cos(angle));
+    this.sun.intensity = this.sunIntensity;
+    this.ambientLight.intensity = 0.2 + 0.3 * this.sunIntensity;
+  }
+
+  sunlightAt(position) {
+    if (this.sunIntensity <= 0) return 0;
+    const dir = new THREE.Vector3().subVectors(this.sun.position, position).normalize();
+    this.raycaster.set(position, dir);
+    const dist = position.distanceTo(this.sun.position);
+    const hits = this.raycaster.intersectObjects(this.occluders, true);
+    const blocked = hits.some(h => h.distance > 0.01 && h.distance < dist);
+    return blocked ? 0 : this.sunIntensity;
   }
 }
 
