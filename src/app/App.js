@@ -5,6 +5,7 @@ import { SceneManager } from '../render/sceneManager.js';
 import { Physics } from '../physics/physics.js';
 import { PlantManager } from '../plants/plantManager.js';
 import { InventoryUI } from '../ui/inventory.js';
+import { Soil } from '../world/soil.js';
 
 export class App {
   constructor(root) {
@@ -25,13 +26,14 @@ export class App {
 
     this.physics = new Physics();
     this.sceneManager = new SceneManager(this.scene, this.renderer, this.physics);
-    this.plantManager = new PlantManager(this.scene, this.sceneManager.ground);
+    this.soil = new Soil(this.scene);
+    this.plantManager = new PlantManager(this.scene, this.soil);
     this.player = new PlayerController(
       this.camera,
       this.renderer.domElement,
       this.physics,
       this.plantManager,
-      this.sceneManager.ground
+      this.soil
     );
     this.inventoryUI = new InventoryUI();
 
