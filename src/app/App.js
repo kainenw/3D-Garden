@@ -5,12 +5,14 @@ import { SceneManager } from '../render/sceneManager.js';
 import { Physics } from '../physics/physics.js';
 import { PlantManager } from '../plants/plantManager.js';
 import { InventoryUI } from '../ui/inventory.js';
+import { savePlants, loadPlants } from '../state/persistence.js';
 
 export class App {
   constructor(root) {
     this.root = root;
     this.clock = new THREE.Clock();
     this.store = createStore(() => ({}));
+    this.plantsDirty = false;
   }
 
   start() {
@@ -34,6 +36,40 @@ export class App {
       this.sceneManager.ground
     );
     this.inventoryUI = new InventoryUI();
+
+    this.plantManager.subscribe(() => {
+      this.plantsDirty = true;
+    });
+
+    loadPlants().then(plants => {
+      for (const data of plants) {
+        const position = new THREE.Vector3(data.position.x, data.position.y, data.position.z);
+        const plant = this.plantManager.plantAt(position, data.speciesId);
+        if (plant) {
+          plant.stageIndex = data.stageIndex;
+          plant.growthPoints = data.growthPoints;
+          plant.hydration = data.hydration;
+          this.scene.remove(plant.mesh);
+          plant.mesh = this.plantManager.createMesh(plant.species, plant.stageIndex);
+          plant.mesh.position.copy(plant.position);
+          this.scene.add(plant.mesh);
+        }
+      }
+    });
+
+    setInterval(() => {
+      if (this.plantsDirty) {
+        const data = this.plantManager.plants.map(p => ({
+          speciesId: p.speciesId,
+          position: { x: p.position.x, y: p.position.y, z: p.position.z },
+          stageIndex: p.stageIndex,
+          hydration: p.hydration,
+          growthPoints: p.growthPoints,
+        }));
+        savePlants(data);
+        this.plantsDirty = false;
+      }
+    }, 3000);
 
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
