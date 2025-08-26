@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import species from './species.json' assert { type: 'json' };
+import { useStore } from '../state/store.js';
 
 export class PlantManager {
   constructor(scene, ground) {
@@ -72,6 +73,9 @@ export class PlantManager {
   harvestPlant(p) {
     this.scene.remove(p.mesh);
     this.plants = this.plants.filter(pl => pl !== p);
+    const store = useStore.getState();
+    store.addItem({ id: `seed_${p.speciesId}`, type: 'seed', count: 2 });
+    store.addItem({ id: 'decor_token', type: 'decor', count: 1 });
   }
 
   getMeshes() {

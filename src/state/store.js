@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { saveState, loadState } from './persistence.js';
 
 export const useStore = create((set, get) => ({
-  inventory: [],
+  // Start players with a few daisy seeds in their inventory
+  inventory: [{ id: 'seed_daisy', type: 'seed', count: 3 }],
   isInventoryOpen: false,
   addItem: (item) => {
     set((state) => {

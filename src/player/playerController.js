@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import { useStore } from '../state/store.js';
 
 // Basic first-person controller with WASD movement, jump, sprint and
 // pointer-lock mouse look. Integrates with the Physics wrapper.
@@ -133,7 +134,13 @@ export class PlayerController {
     const groundHits = this.raycaster.intersectObject(this.ground);
     if (groundHits.length > 0) {
       const position = groundHits[0].point;
-      this.plantManager.plantAt(position, 'daisy');
+      const seedId = 'seed_daisy';
+      const store = useStore.getState();
+      const hasSeed = store.inventory.find((i) => i.id === seedId && i.count > 0);
+      if (hasSeed) {
+        this.plantManager.plantAt(position, 'daisy');
+        store.removeItem(seedId, 1);
+      }
     }
   }
 }
