@@ -5,6 +5,18 @@ export const useStore = create((set, get) => ({
   // Start players with a few daisy seeds in their inventory
   inventory: [{ id: 'seed_daisy', type: 'seed', count: 3 }],
   isInventoryOpen: false,
+  isPaused: false,
+  keyBindings: {
+    forward: 'KeyW',
+    back: 'KeyS',
+    left: 'KeyA',
+    right: 'KeyD',
+    jump: 'Space',
+    sprint: 'ShiftLeft'
+  },
+  volume: 1,
+  mouseSensitivity: 0.002,
+  bobEnabled: true,
   addItem: (item) => {
     set((state) => {
       const inventory = [...state.inventory];
@@ -36,6 +48,12 @@ export const useStore = create((set, get) => ({
     });
   },
   toggleInventory: () => set((state) => ({ isInventoryOpen: !state.isInventoryOpen })),
+  togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
+  setKeyBinding: (action, code) =>
+    set((state) => ({ keyBindings: { ...state.keyBindings, [action]: code } })),
+  setVolume: (volume) => set({ volume }),
+  setMouseSensitivity: (mouseSensitivity) => set({ mouseSensitivity }),
+  setBobEnabled: (bobEnabled) => set({ bobEnabled }),
   setState: (newState) => set(newState, true),
 }));
 
@@ -46,6 +64,20 @@ loadState().then((data) => {
 });
 
 useStore.subscribe((state) => {
-  const { inventory, isInventoryOpen } = state;
-  saveState({ inventory, isInventoryOpen });
+  const {
+    inventory,
+    isInventoryOpen,
+    keyBindings,
+    volume,
+    mouseSensitivity,
+    bobEnabled,
+  } = state;
+  saveState({
+    inventory,
+    isInventoryOpen,
+    keyBindings,
+    volume,
+    mouseSensitivity,
+    bobEnabled,
+  });
 });
