@@ -15,7 +15,7 @@ export class PlayerController {
     this.jumpVelocity = 5;
     this.lookSpeed = useStore.getState().mouseSensitivity;
     this.bobEnabled = useStore.getState().bobEnabled;
-    useStore.subscribe((state) => {
+    this.unsubscribeSettings = useStore.subscribe((state) => {
       this.lookSpeed = state.mouseSensitivity;
       this.bobEnabled = state.bobEnabled;
     });
@@ -48,7 +48,7 @@ export class PlayerController {
     });
     document.body.appendChild(this.toolHud);
     this.updateSeedSelection(useStore.getState().inventory);
-    useStore.subscribe((state) => {
+    this.unsubscribeInventory = useStore.subscribe((state) => {
       this.updateSeedSelection(state.inventory);
     });
     this.updateToolHud();
@@ -115,22 +115,29 @@ export class PlayerController {
     this.crosshairTooltip = document.createElement('div');
     this.crosshairTooltip.id = 'crosshair-tooltip';
     document.body.appendChild(this.crosshairTooltip);
-    window.addEventListener('keydown', (e) => {
+
+    this.handleWindowKeydown = (e) => {
       if (e.code === 'KeyE') this.interact();
-    });
+    };
+    window.addEventListener('keydown', this.handleWindowKeydown);
 
     // Setup pointer lock for mouse look
-    this.domElement.addEventListener('click', () => {
+    this.handleClick = () => {
       this.domElement.requestPointerLock();
-    });
+    };
+    this.domElement.addEventListener('click', this.handleClick);
 
-    document.addEventListener('pointerlockchange', () => {
+    this.handlePointerLockChange = () => {
       this.pointerLocked = document.pointerLockElement === this.domElement;
-    });
+    };
+    document.addEventListener('pointerlockchange', this.handlePointerLockChange);
 
-    document.addEventListener('mousemove', (e) => this.onMouseMove(e));
-    document.addEventListener('keydown', (e) => this.onKeyDown(e));
-    document.addEventListener('keyup', (e) => this.onKeyUp(e));
+    this.handleMouseMove = (e) => this.onMouseMove(e);
+    document.addEventListener('mousemove', this.handleMouseMove);
+    this.handleKeyDown = (e) => this.onKeyDown(e);
+    document.addEventListener('keydown', this.handleKeyDown);
+    this.handleKeyUp = (e) => this.onKeyUp(e);
+    document.addEventListener('keyup', this.handleKeyUp);
 
     // Create a simple collider body for the player
     this.radius = 0.5;
@@ -388,5 +395,16 @@ export class PlayerController {
     osc.connect(gain).connect(this.audioCtx.destination);
     osc.start();
     osc.stop(this.audioCtx.currentTime + 0.1);
+  }
+
+  dispose() {
+    window.removeEventListener('keydown', this.handleWindowKeydown);
+    this.domElement.removeEventListener('click', this.handleClick);
+    document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
+    document.removeEventListener('mousemove', this.handleMouseMove);
+    document.removeEventListener('keydown', this.handleKeyDown);
+    document.removeEventListener('keyup', this.handleKeyUp);
+    if (this.unsubscribeSettings) this.unsubscribeSettings();
+    if (this.unsubscribeInventory) this.unsubscribeInventory();
   }
 }
