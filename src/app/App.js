@@ -15,6 +15,7 @@ export class App {
     this.clock = new THREE.Clock();
     this.store = createStore(() => ({}));
     this.plantsDirty = false;
+    this.saveInterval = null;
   }
 
   start() {
@@ -66,7 +67,7 @@ export class App {
       }
     });
 
-    setInterval(() => {
+    this.saveInterval = setInterval(() => {
       if (this.plantsDirty) {
         const data = this.plantManager.plants.map(p => ({
           speciesId: p.speciesId,
@@ -80,6 +81,8 @@ export class App {
         this.plantsDirty = false;
       }
     }, 3000);
+
+    window.addEventListener('beforeunload', () => this.stop());
 
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -106,6 +109,11 @@ export class App {
     this.renderer.render(this.scene, this.camera);
   }
 
+  stop() {
+    if (this.saveInterval) {
+      clearInterval(this.saveInterval);
+      this.saveInterval = null;
+    }
   dispose() {
     this.player.dispose();
   }
