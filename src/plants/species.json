@@ -2,6 +2,7 @@
   "daisy": {
     "color": "#ffffff",
     "requirements": { "sunlight": 0.5, "water": 0.4, "fertility": 0.3 },
+    "tolerances": { "overwater": 0.9, "underwater": 0.2, "shade": 0.3 },
     "growthRate": 1,
     "stages": [
       { "name": "seedling", "minGP": 0 },
@@ -12,6 +13,7 @@
   "tulip": {
     "color": "#ff3366",
     "requirements": { "sunlight": 0.6, "water": 0.5, "fertility": 0.4 },
+    "tolerances": { "overwater": 0.85, "underwater": 0.25, "shade": 0.4 },
     "growthRate": 1.1,
     "stages": [
       { "name": "seedling", "minGP": 0 },
@@ -22,6 +24,7 @@
   "lavender": {
     "color": "#9966cc",
     "requirements": { "sunlight": 0.7, "water": 0.3, "fertility": 0.4 },
+    "tolerances": { "overwater": 0.8, "underwater": 0.2, "shade": 0.5 },
     "growthRate": 0.9,
     "stages": [
       { "name": "seedling", "minGP": 0 },
@@ -32,6 +35,7 @@
   "sunflower": {
     "color": "#ffcc00",
     "requirements": { "sunlight": 0.9, "water": 0.6, "fertility": 0.5 },
+    "tolerances": { "overwater": 0.95, "underwater": 0.3, "shade": 0.2 },
     "growthRate": 1.3,
     "stages": [
       { "name": "seedling", "minGP": 0 },
@@ -42,6 +46,7 @@
   "fern": {
     "color": "#33cc66",
     "requirements": { "sunlight": 0.3, "water": 0.7, "fertility": 0.4 },
+    "tolerances": { "overwater": 0.8, "underwater": 0.35, "shade": 0.6 },
     "growthRate": 0.8,
     "stages": [
       { "name": "seedling", "minGP": 0 },
@@ -52,6 +57,7 @@
   "succulent": {
     "color": "#99cc99",
     "requirements": { "sunlight": 0.8, "water": 0.2, "fertility": 0.2 },
+    "tolerances": { "overwater": 0.5, "underwater": 0.1, "shade": 0.3 },
     "growthRate": 0.7,
     "stages": [
       { "name": "seedling", "minGP": 0 },
@@ -62,6 +68,7 @@
   "tomato": {
     "color": "#cc3333",
     "requirements": { "sunlight": 0.7, "water": 0.6, "fertility": 0.6 },
+    "tolerances": { "overwater": 0.9, "underwater": 0.4, "shade": 0.25 },
     "growthRate": 1.2,
     "stages": [
       { "name": "seedling", "minGP": 0 },
@@ -72,6 +79,7 @@
   "maple": {
     "color": "#cc6600",
     "requirements": { "sunlight": 0.5, "water": 0.5, "fertility": 0.5 },
+    "tolerances": { "overwater": 0.85, "underwater": 0.3, "shade": 0.35 },
     "growthRate": 0.6,
     "stages": [
       { "name": "seedling", "minGP": 0 },

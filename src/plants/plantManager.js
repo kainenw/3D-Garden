@@ -11,6 +11,11 @@ export class PlantManager {
     this.plants = [];
     this.dryRate = 0.02;
     this.listeners = new Set();
+    this.soil = new Map();
+  }
+
+  tileKey(pos) {
+    return `${Math.floor(pos.x)}_${Math.floor(pos.z)}`;
   }
 
   plantAt(position, speciesId) {
@@ -19,6 +24,9 @@ export class PlantManager {
     const mesh = this.createMesh(spec, 0);
     mesh.position.copy(position);
     this.scene.add(mesh);
+    const soilKey = this.tileKey(position);
+    const fertility = this.soil.get(soilKey) ?? 1;
+    this.soil.set(soilKey, fertility);
     const plant = {
       speciesId,
       species: spec,
@@ -26,7 +34,10 @@ export class PlantManager {
       position: mesh.position,
       stageIndex: 0,
       growthPoints: 0,
-      hydration: spec.requirements.water
+      hydration: spec.requirements.water,
+      fertility,
+      soilKey,
+      stall: 0
     };
     this.plants.push(plant);
     this.notifyChange();
@@ -52,9 +63,23 @@ export class PlantManager {
   tickPlant(p, dt) {
     const spec = p.species;
     const sun = this.sceneManager ? this.sceneManager.sunlightAt(p.position) : 1;
-    const water = Math.min(1, p.hydration / spec.requirements.water);
-    const fert = 1; // fertility not modelled yet
-    const mult = Math.min(1, sun / spec.requirements.sunlight) * water * fert;
+    const sunMult = Math.min(1, sun / spec.requirements.sunlight);
+    const waterMult = Math.min(1, p.hydration / spec.requirements.water);
+    p.fertility = this.soil.get(p.soilKey) ?? p.fertility;
+    const fertMult = Math.min(1, p.fertility / spec.requirements.fertility);
+    let mult = sunMult * waterMult * fertMult;
+
+    if (sun < spec.tolerances.shade) {
+      mult *= sun / spec.tolerances.shade;
+    }
+    if (p.hydration > spec.tolerances.overwater || p.hydration < spec.tolerances.underwater) {
+      p.stall = 2;
+    }
+    if (p.stall > 0) {
+      p.stall = Math.max(0, p.stall - dt);
+      mult = 0;
+    }
+
     p.growthPoints += spec.growthRate * mult * dt;
     p.hydration = Math.max(0, p.hydration - this.dryRate * dt);
 
@@ -74,7 +99,10 @@ export class PlantManager {
   }
 
   waterPlant(p, amount = 0.2) {
-    p.hydration = Math.min(p.species.requirements.water, p.hydration + amount);
+    p.hydration = Math.min(1, p.hydration + amount);
+    if (p.hydration > p.species.tolerances.overwater) {
+      p.stall = 2;
+    }
     this.notifyChange();
   }
 
@@ -85,7 +113,6 @@ export class PlantManager {
     const store = useStore.getState();
     store.addItem({ id: `seed_${p.speciesId}`, type: 'seed', count: 2 });
     store.addItem({ id: 'decor_token', type: 'decor', count: 1 });
-
   }
 
   getMeshes() {
