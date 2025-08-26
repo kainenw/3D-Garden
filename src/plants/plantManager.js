@@ -2,19 +2,12 @@ import * as THREE from 'three';
 import species from './species.json' assert { type: 'json' };
 
 export class PlantManager {
-  constructor(scene) {
+  constructor(scene, ground) {
     this.scene = scene;
+    this.ground = ground;
     this.species = species;
     this.plants = [];
     this.dryRate = 0.02;
-
-    // simple ground for raycasts
-    this.ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(20, 20),
-      new THREE.MeshStandardMaterial({ color: 0x228b22 })
-    );
-    this.ground.rotation.x = -Math.PI / 2;
-    this.scene.add(this.ground);
   }
 
   plantAt(position, speciesId) {

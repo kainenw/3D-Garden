@@ -25,8 +25,14 @@ export class App {
 
     this.physics = new Physics();
     this.sceneManager = new SceneManager(this.scene, this.renderer, this.physics);
-    this.plantManager = new PlantManager(this.scene);
-    this.player = new PlayerController(this.camera, this.renderer.domElement, this.physics, this.plantManager);
+    this.plantManager = new PlantManager(this.scene, this.sceneManager.ground);
+    this.player = new PlayerController(
+      this.camera,
+      this.renderer.domElement,
+      this.physics,
+      this.plantManager,
+      this.sceneManager.ground
+    );
     this.inventoryUI = new InventoryUI();
 
     window.addEventListener('resize', () => {

@@ -40,6 +40,7 @@ export class SceneManager {
     mesh.rotation.x = -Math.PI / 2;
     mesh.receiveShadow = true;
     this.scene.add(mesh);
+    this.ground = mesh;
 
     if (this.physics) {
       const body = new Body({ mass: 0 });
