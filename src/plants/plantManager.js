@@ -3,9 +3,10 @@ import species from './species.json' assert { type: 'json' };
 import { useStore } from '../state/store.js';
 
 export class PlantManager {
-  constructor(scene, ground) {
+  constructor(scene, ground, sceneManager) {
     this.scene = scene;
     this.ground = ground;
+    this.sceneManager = sceneManager;
     this.species = species;
     this.plants = [];
     this.dryRate = 0.02;
@@ -45,7 +46,7 @@ export class PlantManager {
 
   tickPlant(p, dt) {
     const spec = p.species;
-    const sun = 1; // placeholder full sunlight
+    const sun = this.sceneManager ? this.sceneManager.sunlightAt(p.position) : 1;
     const water = Math.min(1, p.hydration / spec.requirements.water);
     const fert = 1; // fertility not modelled yet
     const mult = Math.min(1, sun / spec.requirements.sunlight) * water * fert;
