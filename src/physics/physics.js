@@ -1,3 +1,4 @@
+import * as CANNON from 'cannon-es';
 import { World, Vec3, Body, Plane } from 'cannon-es';
 
 // Simple physics wrapper around cannon-es. Uses a fixed 5 Hz tick and
