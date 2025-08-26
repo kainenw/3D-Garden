@@ -26,6 +26,18 @@ export class PlayerController {
     this.raycaster = new THREE.Raycaster();
     this.currentTool = 'shovel';
     this.water = 1;
+
+    // Preview mesh shown when attempting to plant with the shovel.
+    const previewGeom = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const previewMat = new THREE.MeshStandardMaterial({
+      color: 0x00ff00,
+      transparent: true,
+      opacity: 0.5,
+    });
+    this.previewMesh = new THREE.Mesh(previewGeom, previewMat);
+    this.previewMesh.visible = false;
+    // Add preview to the same scene as plants so it renders with them.
+    this.plantManager.scene.add(this.previewMesh);
     this.toolHud = document.createElement('div');
     this.toolHud.id = 'tool-hud';
     Object.assign(this.toolHud.style, {
@@ -134,6 +146,45 @@ export class PlayerController {
       this.body.position.y + (this.eyeHeight - this.radius),
       this.body.position.z
     );
+
+    this.updatePlantPreview();
+  }
+
+  updatePlantPreview() {
+    if (this.currentTool !== 'shovel') {
+      this.previewMesh.visible = false;
+      return;
+    }
+
+    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+
+    const plantHits = this.raycaster.intersectObjects(this.plantManager.getMeshes());
+    const groundHits = this.raycaster.intersectObject(this.ground);
+
+    // If a plant is hit before the ground, we can't place a plant here.
+    if (
+      plantHits.length > 0 &&
+      (!groundHits.length || plantHits[0].distance < groundHits[0].distance)
+    ) {
+      this.previewMesh.visible = false;
+      return;
+    }
+
+    if (groundHits.length === 0) {
+      this.previewMesh.visible = false;
+      return;
+    }
+
+    const position = groundHits[0].point;
+    this.previewMesh.position.copy(position);
+    this.previewMesh.position.y += 0.1; // slightly above ground
+
+    // Determine validity: currently based on having at least one seed.
+    const seedId = 'seed_daisy';
+    const store = useStore.getState();
+    const hasSeed = store.inventory.find((i) => i.id === seedId && i.count > 0);
+    this.previewMesh.material.color.set(hasSeed ? 0x00ff00 : 0xff0000);
+    this.previewMesh.visible = true;
   }
 
   setTool(tool) {
