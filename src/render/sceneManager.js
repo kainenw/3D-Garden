@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import * as CANNON from 'cannon-es';
+import { Body, Plane, Box, Vec3 } from 'cannon-es';
 
 // Builds the world geometry and lights.
 export class SceneManager {
@@ -41,10 +41,12 @@ export class SceneManager {
     mesh.receiveShadow = true;
     this.scene.add(mesh);
 
-    const body = new CANNON.Body({ mass: 0 });
-    body.addShape(new CANNON.Plane());
-    body.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
-    this.physics.world.addBody(body);
+    if (this.physics) {
+      const body = new Body({ mass: 0 });
+      body.addShape(new Plane());
+      body.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+      this.physics.world.addBody(body);
+    }
   }
 
   _initWalls() {
@@ -62,12 +64,14 @@ export class SceneManager {
       wall.receiveShadow = true;
       this.scene.add(wall);
 
-      const shape = new CANNON.Box(new CANNON.Vec3(30, height / 2, thickness / 2));
-      const body = new CANNON.Body({ mass: 0 });
-      body.addShape(shape);
-      body.position.set(x, height / 2, z);
-      body.quaternion.setFromEuler(0, rotY, 0);
-      this.physics.world.addBody(body);
+      if (this.physics) {
+        const shape = new Box(new Vec3(30, height / 2, thickness / 2));
+        const body = new Body({ mass: 0 });
+        body.addShape(shape);
+        body.position.set(x, height / 2, z);
+        body.quaternion.setFromEuler(0, rotY, 0);
+        this.physics.world.addBody(body);
+      }
     };
 
     createWall(0, -halfSize, 0); // back
