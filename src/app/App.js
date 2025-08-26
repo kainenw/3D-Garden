@@ -1,12 +1,16 @@
 import * as THREE from 'three';
+import createStore from 'zustand/vanilla';
 import { PlayerController } from '../player/playerController.js';
 import { SceneManager } from '../render/sceneManager.js';
 import { Physics } from '../physics/physics.js';
+import { PlantManager } from '../plants/plantManager.js';
+import { InventoryUI } from '../ui/inventory.js';
 
 export class App {
   constructor(root) {
     this.root = root;
     this.clock = new THREE.Clock();
+    this.store = createStore(() => ({}));
   }
 
   start() {
@@ -21,7 +25,9 @@ export class App {
 
     this.physics = new Physics();
     this.sceneManager = new SceneManager(this.scene, this.renderer);
-    this.player = new PlayerController(this.camera, this.renderer.domElement, this.physics);
+    this.plantManager = new PlantManager(this.scene);
+    this.player = new PlayerController(this.camera, this.renderer.domElement, this.physics, this.plantManager);
+    this.inventoryUI = new InventoryUI();
 
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -37,6 +43,7 @@ export class App {
     const dt = Math.min(this.clock.getDelta(), 0.033);
     this.physics.step(dt);
     this.player.update(dt);
+    this.plantManager.update(dt);
     this.sceneManager.update(dt);
     this.renderer.render(this.scene, this.camera);
   }
