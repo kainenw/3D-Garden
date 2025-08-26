@@ -6,7 +6,7 @@ import { useStore } from '../state/store.js';
 // pointer-lock mouse look. Integrates with the Physics wrapper.
 
 export class PlayerController {
-  constructor(camera, domElement, physics, plantManager, ground) {
+  constructor(camera, domElement, physics, plantManager, ground, decorManager = null) {
     this.camera = camera;
     this.domElement = domElement;
     this.physics = physics;
@@ -29,6 +29,7 @@ export class PlayerController {
 
     this.plantManager = plantManager;
     this.ground = ground;
+    this.decorManager = decorManager;
     this.raycaster = new THREE.Raycaster();
     this.currentTool = 'shovel';
     this.water = 1;
@@ -329,25 +330,28 @@ export class PlayerController {
 
   useShovel() {
     this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+    if (this.decorManager && this.decorManager.getMeshes) {
+      const decorHits = this.raycaster.intersectObjects(this.decorManager.getMeshes());
+      if (decorHits.length > 0) {
+        decorHits[0].object.rotation.y += Math.PI / 2;
+        this.playTick();
+        return;
+      }
+    }
     const plantHits = this.raycaster.intersectObjects(this.plantManager.getMeshes());
     if (plantHits.length > 0) {
       const plant = this.plantManager.getPlantByMesh(plantHits[0].object);
-      plant.mesh.rotation.y += Math.PI / 2;
-      this.playTick();
+      if (plant.stageIndex === 0) {
+        this.plantManager.removePlant(plant);
+        this.playTick();
+      }
       return;
     }
     const groundHits = this.raycaster.intersectObject(this.ground);
-    if (groundHits.length > 0 && this.activeSeedId) {
+    if (groundHits.length > 0) {
       const position = groundHits[0].point;
-      const seedId = this.activeSeedId;
-      const store = useStore.getState();
-      const hasSeed = store.inventory.find((i) => i.id === seedId && i.count > 0);
-      if (hasSeed) {
-        const speciesId = seedId.replace('seed_', '');
-        this.plantManager.plantAt(position, speciesId);
-        store.removeItem(seedId, 1);
-        this.playTick();
-      }
+      this.plantManager.toggleSoil(position);
+      this.playTick();
     }
   }
 
