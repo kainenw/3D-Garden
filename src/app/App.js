@@ -90,6 +90,8 @@ export class App {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
+    window.addEventListener('beforeunload', () => this.dispose());
+
     this.loop();
   }
 
@@ -112,5 +114,7 @@ export class App {
       clearInterval(this.saveInterval);
       this.saveInterval = null;
     }
+  dispose() {
+    this.player.dispose();
   }
 }
