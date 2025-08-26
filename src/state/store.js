@@ -54,12 +54,12 @@ export const useStore = create((set, get) => ({
   setVolume: (volume) => set({ volume }),
   setMouseSensitivity: (mouseSensitivity) => set({ mouseSensitivity }),
   setBobEnabled: (bobEnabled) => set({ bobEnabled }),
-  setState: (newState) => set(newState, true),
+  setState: (newState) => set(newState),
 }));
 
 loadState().then((data) => {
   if (data) {
-    useStore.getState().setState(data);
+    useStore.setState(data);
   }
 });
 
