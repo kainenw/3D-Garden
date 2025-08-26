@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import createStore from 'zustand/vanilla';
 import { PlayerController } from '../player/playerController.js';
 import { SceneManager } from '../render/sceneManager.js';
 import { Physics } from '../physics/physics.js';
@@ -9,6 +10,7 @@ export class App {
   constructor(root) {
     this.root = root;
     this.clock = new THREE.Clock();
+    this.store = createStore(() => ({}));
   }
 
   start() {
