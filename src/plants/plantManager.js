@@ -18,6 +18,16 @@ export class PlantManager {
     return `${Math.floor(pos.x)}_${Math.floor(pos.z)}`;
   }
 
+  toggleSoil(position) {
+    const key = this.tileKey(position);
+    if (this.soil.has(key)) {
+      this.soil.delete(key);
+    } else {
+      this.soil.set(key, 1);
+    }
+    this.notifyChange();
+  }
+
   plantAt(position, speciesId) {
     const spec = this.species[speciesId];
     if (!spec) return null;
@@ -113,6 +123,12 @@ export class PlantManager {
     const store = useStore.getState();
     store.addItem({ id: `seed_${p.speciesId}`, type: 'seed', count: 2 });
     store.addItem({ id: 'decor_token', type: 'decor', count: 1 });
+  }
+
+  removePlant(p) {
+    this.scene.remove(p.mesh);
+    this.plants = this.plants.filter(pl => pl !== p);
+    this.notifyChange();
   }
 
   getMeshes() {
