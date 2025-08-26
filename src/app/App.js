@@ -87,6 +87,8 @@ export class App {
       this.renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
+    window.addEventListener('beforeunload', () => this.dispose());
+
     this.loop();
   }
 
@@ -102,5 +104,9 @@ export class App {
       this.player.update(dt);
     }
     this.renderer.render(this.scene, this.camera);
+  }
+
+  dispose() {
+    this.player.dispose();
   }
 }
