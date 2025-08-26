@@ -10,6 +10,7 @@ export class PlantManager {
     this.species = species;
     this.plants = [];
     this.dryRate = 0.02;
+    this.listeners = new Set();
   }
 
   plantAt(position, speciesId) {
@@ -28,6 +29,7 @@ export class PlantManager {
       hydration: spec.requirements.water
     };
     this.plants.push(plant);
+    this.notifyChange();
     return plant;
   }
 
@@ -41,6 +43,9 @@ export class PlantManager {
   update(dt) {
     for (const p of this.plants) {
       this.tickPlant(p, dt);
+    }
+    if (this.plants.length > 0) {
+      this.notifyChange();
     }
   }
 
@@ -65,18 +70,22 @@ export class PlantManager {
     p.mesh = this.createMesh(p.species, p.stageIndex);
     p.mesh.position.copy(p.position);
     this.scene.add(p.mesh);
+    this.notifyChange();
   }
 
   waterPlant(p, amount = 0.2) {
     p.hydration = Math.min(p.species.requirements.water, p.hydration + amount);
+    this.notifyChange();
   }
 
   harvestPlant(p) {
     this.scene.remove(p.mesh);
     this.plants = this.plants.filter(pl => pl !== p);
+    this.notifyChange();
     const store = useStore.getState();
     store.addItem({ id: `seed_${p.speciesId}`, type: 'seed', count: 2 });
     store.addItem({ id: 'decor_token', type: 'decor', count: 1 });
+
   }
 
   getMeshes() {
@@ -85,5 +94,16 @@ export class PlantManager {
 
   getPlantByMesh(mesh) {
     return this.plants.find(p => p.mesh === mesh);
+  }
+
+  subscribe(fn) {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+
+  notifyChange() {
+    for (const fn of this.listeners) {
+      fn(this.plants);
+    }
   }
 }
