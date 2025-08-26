@@ -5,6 +5,8 @@ import { SceneManager } from '../render/sceneManager.js';
 import { Physics } from '../physics/physics.js';
 import { PlantManager } from '../plants/plantManager.js';
 import { InventoryUI } from '../ui/inventory.js';
+import { PauseMenu } from '../ui/pauseMenu.js';
+import { useStore } from '../state/store.js';
 import { savePlants, loadPlants } from '../state/persistence.js';
 
 export class App {
@@ -40,6 +42,7 @@ export class App {
       this.sceneManager.ground
     );
     this.inventoryUI = new InventoryUI();
+    this.pauseMenu = new PauseMenu();
 
     this.plantManager.subscribe(() => {
       this.plantsDirty = true;
@@ -87,10 +90,14 @@ export class App {
   loop() {
     requestAnimationFrame(() => this.loop());
     const dt = Math.min(this.clock.getDelta(), 0.033);
-    this.physics.step(dt);
-    this.player.update(dt);
-    this.plantManager.update(dt);
-    this.sceneManager.update(dt);
+    if (!useStore.getState().isPaused) {
+      this.physics.step(dt);
+      this.player.update(dt);
+      this.plantManager.update(dt);
+      this.sceneManager.update(dt);
+    } else {
+      this.player.update(dt);
+    }
     this.renderer.render(this.scene, this.camera);
   }
 }

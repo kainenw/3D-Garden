@@ -13,13 +13,19 @@ export class PlayerController {
     this.walkSpeed = 4;
     this.sprintMultiplier = 1.8;
     this.jumpVelocity = 5;
-    this.lookSpeed = 0.002;
+    this.lookSpeed = useStore.getState().mouseSensitivity;
+    this.bobEnabled = useStore.getState().bobEnabled;
+    useStore.subscribe((state) => {
+      this.lookSpeed = state.mouseSensitivity;
+      this.bobEnabled = state.bobEnabled;
+    });
 
     this.yaw = 0;
     this.pitch = 0;
 
     this.keys = {};
     this.jumpRequested = false;
+    this.bobTime = 0;
 
     this.plantManager = plantManager;
     this.ground = ground;
@@ -70,7 +76,7 @@ export class PlayerController {
   }
 
   onMouseMove(e) {
-    if (!this.pointerLocked) return;
+    if (!this.pointerLocked || useStore.getState().isPaused) return;
     this.yaw -= e.movementX * this.lookSpeed;
     this.pitch -= e.movementY * this.lookSpeed;
     const PI_2 = Math.PI / 2;
@@ -78,8 +84,23 @@ export class PlayerController {
   }
 
   onKeyDown(e) {
+    const store = useStore.getState();
+    if (e.code === 'Escape') {
+      store.togglePause();
+      const paused = useStore.getState().isPaused;
+      if (paused) {
+        document.exitPointerLock();
+        this.keys = {};
+      } else {
+        this.domElement.requestPointerLock();
+      }
+      return;
+    }
+    if (store.isPaused) return;
+
     this.keys[e.code] = true;
-    if (e.code === 'Space') this.jumpRequested = true;
+    const bindings = store.keyBindings;
+    if (e.code === bindings.jump) this.jumpRequested = true;
     if (e.code === 'Digit1') this.setTool('shovel');
     if (e.code === 'Digit2') this.setTool('wateringCan');
     if (e.code === 'Digit3') this.setTool('shears');
@@ -92,25 +113,30 @@ export class PlayerController {
   update(dt) {
     // Update camera rotation from accumulated yaw/pitch
     this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
+    if (useStore.getState().isPaused) return;
+
+    const bindings = useStore.getState().keyBindings;
 
     // Movement direction in local space
     const direction = new THREE.Vector3();
-    if (this.keys['KeyW']) direction.z -= 1;
-    if (this.keys['KeyS']) direction.z += 1;
-    if (this.keys['KeyA']) direction.x -= 1;
-    if (this.keys['KeyD']) direction.x += 1;
+    if (this.keys[bindings.forward]) direction.z -= 1;
+    if (this.keys[bindings.back]) direction.z += 1;
+    if (this.keys[bindings.left]) direction.x -= 1;
+    if (this.keys[bindings.right]) direction.x += 1;
 
     const velocity = this.body.velocity;
     if (direction.lengthSq() > 0) {
       direction.normalize();
-      const speed = this.keys['ShiftLeft'] || this.keys['ShiftRight']
+      const speed = this.keys[bindings.sprint]
         ? this.walkSpeed * this.sprintMultiplier
         : this.walkSpeed;
 
       const euler = new THREE.Euler(0, this.yaw, 0, 'YXZ');
       const forward = new THREE.Vector3(0, 0, -1).applyEuler(euler);
       const right = new THREE.Vector3(1, 0, 0).applyEuler(euler);
-      const move = forward.multiplyScalar(direction.z).add(right.multiplyScalar(direction.x));
+      const move = forward
+        .multiplyScalar(direction.z)
+        .add(right.multiplyScalar(direction.x));
       move.normalize();
       velocity.x = move.x * speed;
       velocity.z = move.z * speed;
@@ -128,10 +154,18 @@ export class PlayerController {
       this.jumpRequested = false;
     }
 
+    let bobOffset = 0;
+    if (this.bobEnabled && direction.lengthSq() > 0) {
+      this.bobTime += dt * 10;
+      bobOffset = Math.sin(this.bobTime) * 0.05;
+    } else {
+      this.bobTime = 0;
+    }
+
     // Sync camera position with physics body
     this.camera.position.set(
       this.body.position.x,
-      this.body.position.y + (this.eyeHeight - this.radius),
+      this.body.position.y + (this.eyeHeight - this.radius) + bobOffset,
       this.body.position.z
     );
   }
