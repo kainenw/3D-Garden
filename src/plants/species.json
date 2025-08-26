@@ -7,7 +7,8 @@
       { "name": "seedling", "minGP": 0 },
       { "name": "growing", "minGP": 10 },
       { "name": "harvest", "minGP": 20 }
-    ]
+    ],
+    "yield": { "seeds": 2, "decor": 1 }
   },
   "tulip": {
     "color": "#ff3366",
@@ -17,7 +18,8 @@
       { "name": "seedling", "minGP": 0 },
       { "name": "growing", "minGP": 12 },
       { "name": "harvest", "minGP": 24 }
-    ]
+    ],
+    "yield": { "seeds": 2, "decor": 1 }
   },
   "lavender": {
     "color": "#9966cc",
@@ -27,7 +29,8 @@
       { "name": "seedling", "minGP": 0 },
       { "name": "growing", "minGP": 15 },
       { "name": "harvest", "minGP": 30 }
-    ]
+    ],
+    "yield": { "seeds": 2, "decor": 1 }
   },
   "sunflower": {
     "color": "#ffcc00",
@@ -37,7 +40,8 @@
       { "name": "seedling", "minGP": 0 },
       { "name": "growing", "minGP": 20 },
       { "name": "harvest", "minGP": 40 }
-    ]
+    ],
+    "yield": { "seeds": 2, "decor": 1 }
   },
   "fern": {
     "color": "#33cc66",
@@ -47,7 +51,8 @@
       { "name": "seedling", "minGP": 0 },
       { "name": "growing", "minGP": 10 },
       { "name": "harvest", "minGP": 25 }
-    ]
+    ],
+    "yield": { "seeds": 2, "decor": 1 }
   },
   "succulent": {
     "color": "#99cc99",
@@ -57,7 +62,8 @@
       { "name": "seedling", "minGP": 0 },
       { "name": "growing", "minGP": 14 },
       { "name": "harvest", "minGP": 28 }
-    ]
+    ],
+    "yield": { "seeds": 2, "decor": 1 }
   },
   "tomato": {
     "color": "#cc3333",
@@ -67,7 +73,9 @@
       { "name": "seedling", "minGP": 0 },
       { "name": "growing", "minGP": 18 },
       { "name": "harvest", "minGP": 36 }
-    ]
+    ],
+    "yield": { "seeds": 2, "decor": 1 },
+    "postHarvest": { "stage": "growing", "cooldown": 5 }
   },
   "maple": {
     "color": "#cc6600",
@@ -77,6 +85,7 @@
       { "name": "seedling", "minGP": 0 },
       { "name": "growing", "minGP": 25 },
       { "name": "harvest", "minGP": 50 }
-    ]
+    ],
+    "yield": { "seeds": 2, "decor": 1 }
   }
 }

@@ -26,7 +26,8 @@ export class PlantManager {
       position: mesh.position,
       stageIndex: 0,
       growthPoints: 0,
-      hydration: spec.requirements.water
+      hydration: spec.requirements.water,
+      cooldown: 0
     };
     this.plants.push(plant);
     this.notifyChange();
@@ -50,6 +51,10 @@ export class PlantManager {
   }
 
   tickPlant(p, dt) {
+    if (p.cooldown > 0) {
+      p.cooldown = Math.max(0, p.cooldown - dt);
+      return;
+    }
     const spec = p.species;
     const sun = this.sceneManager ? this.sceneManager.sunlightAt(p.position) : 1;
     const water = Math.min(1, p.hydration / spec.requirements.water);
@@ -79,12 +84,34 @@ export class PlantManager {
   }
 
   harvestPlant(p) {
-    this.scene.remove(p.mesh);
-    this.plants = this.plants.filter(pl => pl !== p);
-    this.notifyChange();
     const store = useStore.getState();
-    store.addItem({ id: `seed_${p.speciesId}`, type: 'seed', count: 2 });
-    store.addItem({ id: 'decor_token', type: 'decor', count: 1 });
+    const yieldData = p.species.yield || {};
+    if (yieldData.seeds) {
+      store.addItem({ id: `seed_${p.speciesId}`, type: 'seed', count: yieldData.seeds });
+    }
+    if (yieldData.decor) {
+      store.addItem({ id: 'decor_token', type: 'decor', count: yieldData.decor });
+    }
+
+    const post = p.species.postHarvest;
+    if (post) {
+      const stageIndex = typeof post.stageIndex === 'number'
+        ? post.stageIndex
+        : p.species.stages.findIndex(s => s.name === post.stage);
+      if (stageIndex >= 0) {
+        p.stageIndex = stageIndex;
+        p.growthPoints = p.species.stages[stageIndex].minGP;
+        this.scene.remove(p.mesh);
+        p.mesh = this.createMesh(p.species, p.stageIndex);
+        p.mesh.position.copy(p.position);
+        this.scene.add(p.mesh);
+      }
+      p.cooldown = post.cooldown || 0;
+    } else {
+      this.scene.remove(p.mesh);
+      this.plants = this.plants.filter(pl => pl !== p);
+    }
+    this.notifyChange();
 
   }
 
