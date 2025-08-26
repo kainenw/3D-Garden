@@ -52,10 +52,11 @@ export class PlantManager {
   }
 
   update(dt) {
+    let changed = false;
     for (const p of this.plants) {
-      this.tickPlant(p, dt);
+      changed = this.tickPlant(p, dt) || changed;
     }
-    if (this.plants.length > 0) {
+    if (changed) {
       this.notifyChange();
     }
   }
@@ -65,6 +66,7 @@ export class PlantManager {
     const sun = this.sceneManager ? this.sceneManager.sunlightAt(p.position) : 1;
     const sunMult = Math.min(1, sun / spec.requirements.sunlight);
     const waterMult = Math.min(1, p.hydration / spec.requirements.water);
+    const prevFertility = p.fertility;
     p.fertility = this.soil.get(p.soilKey) ?? p.fertility;
     const fertMult = Math.min(1, p.fertility / spec.requirements.fertility);
     let mult = sunMult * waterMult * fertMult;
@@ -72,6 +74,7 @@ export class PlantManager {
     if (sun < spec.tolerances.shade) {
       mult *= sun / spec.tolerances.shade;
     }
+    const prevStall = p.stall;
     if (p.hydration > spec.tolerances.overwater || p.hydration < spec.tolerances.underwater) {
       p.stall = 2;
     }
@@ -80,13 +83,22 @@ export class PlantManager {
       mult = 0;
     }
 
+    const prevGP = p.growthPoints;
+    const prevHydration = p.hydration;
     p.growthPoints += spec.growthRate * mult * dt;
     p.hydration = Math.max(0, p.hydration - this.dryRate * dt);
-
+    const prevStage = p.stageIndex;
     const nextStage = spec.stages[p.stageIndex + 1];
     if (nextStage && p.growthPoints >= nextStage.minGP) {
       this.advanceStage(p);
     }
+    return (
+      p.fertility !== prevFertility ||
+      p.stall !== prevStall ||
+      p.growthPoints !== prevGP ||
+      p.hydration !== prevHydration ||
+      p.stageIndex !== prevStage
+    );
   }
 
   advanceStage(p) {
