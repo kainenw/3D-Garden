@@ -23,6 +23,22 @@ export class PlayerController {
     this.plantManager = plantManager;
     this.ground = ground;
     this.raycaster = new THREE.Raycaster();
+    this.currentTool = 'shovel';
+    this.water = 1;
+    this.toolHud = document.createElement('div');
+    this.toolHud.id = 'tool-hud';
+    Object.assign(this.toolHud.style, {
+      position: 'fixed',
+      top: '10px',
+      left: '10px',
+      padding: '4px 8px',
+      background: 'rgba(0,0,0,0.5)',
+      color: 'white',
+      fontFamily: 'sans-serif',
+      zIndex: 1000
+    });
+    document.body.appendChild(this.toolHud);
+    this.updateToolHud();
     window.addEventListener('keydown', (e) => {
       if (e.code === 'KeyE') this.interact();
     });
@@ -63,6 +79,9 @@ export class PlayerController {
   onKeyDown(e) {
     this.keys[e.code] = true;
     if (e.code === 'Space') this.jumpRequested = true;
+    if (e.code === 'Digit1') this.setTool('shovel');
+    if (e.code === 'Digit2') this.setTool('wateringCan');
+    if (e.code === 'Digit3') this.setTool('shears');
   }
 
   onKeyUp(e) {
@@ -116,24 +135,76 @@ export class PlayerController {
     );
   }
 
-  interact() {
-    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+  setTool(tool) {
+    this.currentTool = tool;
+    this.updateToolHud();
+  }
 
+  updateToolHud() {
+    const names = {
+      shovel: 'Shovel',
+      wateringCan: 'Watering Can',
+      shears: 'Shears'
+    };
+    this.toolHud.textContent = `Tool: ${names[this.currentTool]}`;
+  }
+
+  interact() {
+    switch (this.currentTool) {
+      case 'shovel':
+        this.useShovel();
+        break;
+      case 'wateringCan':
+        this.useWateringCan();
+        break;
+      case 'shears':
+        this.useShears();
+        break;
+    }
+  }
+
+  useShovel() {
+    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
     const plantHits = this.raycaster.intersectObjects(this.plantManager.getMeshes());
     if (plantHits.length > 0) {
       const plant = this.plantManager.getPlantByMesh(plantHits[0].object);
-      if (plant.stageIndex >= plant.species.stages.length - 1) {
-        this.plantManager.harvestPlant(plant);
-      } else {
-        this.plantManager.waterPlant(plant);
-      }
+      plant.mesh.rotation.y += Math.PI / 2;
       return;
     }
-
     const groundHits = this.raycaster.intersectObject(this.ground);
     if (groundHits.length > 0) {
       const position = groundHits[0].point;
       this.plantManager.plantAt(position, 'daisy');
+    }
+  }
+
+  useWateringCan() {
+    if (this.water <= 0) return;
+    const origin = this.camera.position.clone();
+    const forward = new THREE.Vector3();
+    this.camera.getWorldDirection(forward);
+    const maxDist = 2;
+    const cone = Math.PI / 12;
+    let watered = 0;
+    for (const plant of this.plantManager.plants) {
+      const toPlant = plant.position.clone().sub(origin);
+      const dist = toPlant.length();
+      if (dist > maxDist) continue;
+      const angle = forward.angleTo(toPlant.normalize());
+      if (angle < cone) {
+        this.plantManager.waterPlant(plant);
+        watered++;
+      }
+    }
+    this.water = Math.max(0, this.water - watered * 0.1);
+  }
+
+  useShears() {
+    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+    const plantHits = this.raycaster.intersectObjects(this.plantManager.getMeshes());
+    if (plantHits.length > 0) {
+      const plant = this.plantManager.getPlantByMesh(plantHits[0].object);
+      this.plantManager.harvestPlant(plant);
     }
   }
 }
