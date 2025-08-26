@@ -26,6 +26,8 @@ export class PlayerController {
     this.raycaster = new THREE.Raycaster();
     this.currentTool = 'shovel';
     this.water = 1;
+    this.seedIds = [];
+    this.activeSeedId = null;
     this.toolHud = document.createElement('div');
     this.toolHud.id = 'tool-hud';
     Object.assign(this.toolHud.style, {
@@ -39,6 +41,10 @@ export class PlayerController {
       zIndex: 1000
     });
     document.body.appendChild(this.toolHud);
+    this.updateSeedSelection(useStore.getState().inventory);
+    useStore.subscribe((state) => {
+      this.updateSeedSelection(state.inventory);
+    });
     this.updateToolHud();
     window.addEventListener('keydown', (e) => {
       if (e.code === 'KeyE') this.interact();
@@ -83,6 +89,7 @@ export class PlayerController {
     if (e.code === 'Digit1') this.setTool('shovel');
     if (e.code === 'Digit2') this.setTool('wateringCan');
     if (e.code === 'Digit3') this.setTool('shears');
+    if (e.code === 'KeyR') this.cycleSeed();
   }
 
   onKeyUp(e) {
@@ -147,7 +154,33 @@ export class PlayerController {
       wateringCan: 'Watering Can',
       shears: 'Shears'
     };
-    this.toolHud.textContent = `Tool: ${names[this.currentTool]}`;
+    const seedName = this.activeSeedId
+      ? this.activeSeedId.replace('seed_', '')
+      : 'None';
+    this.toolHud.textContent = `Tool: ${names[this.currentTool]} | Seed: ${seedName}`;
+  }
+
+  updateSeedSelection(inventory) {
+    const seeds = inventory
+      .filter((i) => i.type === 'seed' && i.count > 0)
+      .map((i) => i.id);
+    this.seedIds = seeds;
+    if (!this.activeSeedId || !seeds.includes(this.activeSeedId)) {
+      this.activeSeedId = seeds[0] || null;
+    }
+    this.updateToolHud();
+  }
+
+  cycleSeed() {
+    if (this.seedIds.length === 0) {
+      this.activeSeedId = null;
+      this.updateToolHud();
+      return;
+    }
+    const index = this.seedIds.indexOf(this.activeSeedId);
+    const next = (index + 1) % this.seedIds.length;
+    this.activeSeedId = this.seedIds[next];
+    this.updateToolHud();
   }
 
   interact() {
@@ -173,13 +206,14 @@ export class PlayerController {
       return;
     }
     const groundHits = this.raycaster.intersectObject(this.ground);
-    if (groundHits.length > 0) {
+    if (groundHits.length > 0 && this.activeSeedId) {
       const position = groundHits[0].point;
-      const seedId = 'seed_daisy';
+      const seedId = this.activeSeedId;
       const store = useStore.getState();
       const hasSeed = store.inventory.find((i) => i.id === seedId && i.count > 0);
       if (hasSeed) {
-        this.plantManager.plantAt(position, 'daisy');
+        const speciesId = seedId.replace('seed_', '');
+        this.plantManager.plantAt(position, speciesId);
         store.removeItem(seedId, 1);
       }
     }
