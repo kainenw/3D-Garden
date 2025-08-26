@@ -40,6 +40,69 @@ export class PlayerController {
     });
     document.body.appendChild(this.toolHud);
     this.updateToolHud();
+
+    // Crosshair element in the center of the screen
+    const style = document.createElement('style');
+    style.textContent = `
+      #crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        z-index: 1000;
+      }
+      #crosshair .horizontal, #crosshair .vertical {
+        position: absolute;
+        background: white;
+      }
+      #crosshair .horizontal {
+        top: 9px;
+        left: 0;
+        height: 2px;
+        width: 100%;
+      }
+      #crosshair .vertical {
+        left: 9px;
+        top: 0;
+        width: 2px;
+        height: 100%;
+      }
+      #crosshair.active .horizontal {
+        background: yellow;
+        height: 4px;
+      }
+      #crosshair.active .vertical {
+        background: yellow;
+        width: 4px;
+      }
+      #crosshair-tooltip {
+        position: fixed;
+        top: calc(50% + 15px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.7);
+        color: white;
+        font-family: sans-serif;
+        font-size: 12px;
+        padding: 2px 4px;
+        pointer-events: none;
+        z-index: 1001;
+        display: none;
+      }
+    `;
+    document.head.appendChild(style);
+
+    this.crosshair = document.createElement('div');
+    this.crosshair.id = 'crosshair';
+    this.crosshair.innerHTML = '<div class="horizontal"></div><div class="vertical"></div>';
+    document.body.appendChild(this.crosshair);
+
+    this.crosshairTooltip = document.createElement('div');
+    this.crosshairTooltip.id = 'crosshair-tooltip';
+    document.body.appendChild(this.crosshairTooltip);
     window.addEventListener('keydown', (e) => {
       if (e.code === 'KeyE') this.interact();
     });
@@ -134,6 +197,8 @@ export class PlayerController {
       this.body.position.y + (this.eyeHeight - this.radius),
       this.body.position.z
     );
+
+    this.updateCrosshair();
   }
 
   setTool(tool) {
@@ -148,6 +213,30 @@ export class PlayerController {
       shears: 'Shears'
     };
     this.toolHud.textContent = `Tool: ${names[this.currentTool]}`;
+  }
+
+  updateCrosshair() {
+    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+    let verb = null;
+    if (this.currentTool === 'shears') {
+      const plantHits = this.raycaster.intersectObjects(this.plantManager.getMeshes());
+      if (plantHits.length > 0) verb = 'Harvest';
+    } else if (this.currentTool === 'wateringCan') {
+      const plantHits = this.raycaster.intersectObjects(this.plantManager.getMeshes());
+      if (plantHits.length > 0) verb = 'Water';
+    } else if (this.currentTool === 'shovel') {
+      const groundHits = this.raycaster.intersectObject(this.ground);
+      if (groundHits.length > 0) verb = 'Plant';
+    }
+
+    if (verb) {
+      this.crosshair.classList.add('active');
+      this.crosshairTooltip.textContent = verb;
+      this.crosshairTooltip.style.display = 'block';
+    } else {
+      this.crosshair.classList.remove('active');
+      this.crosshairTooltip.style.display = 'none';
+    }
   }
 
   interact() {
@@ -170,6 +259,7 @@ export class PlayerController {
     if (plantHits.length > 0) {
       const plant = this.plantManager.getPlantByMesh(plantHits[0].object);
       plant.mesh.rotation.y += Math.PI / 2;
+      this.playTick();
       return;
     }
     const groundHits = this.raycaster.intersectObject(this.ground);
@@ -181,6 +271,7 @@ export class PlayerController {
       if (hasSeed) {
         this.plantManager.plantAt(position, 'daisy');
         store.removeItem(seedId, 1);
+        this.playTick();
       }
     }
   }
@@ -204,6 +295,7 @@ export class PlayerController {
       }
     }
     this.water = Math.max(0, this.water - watered * 0.1);
+    if (watered > 0) this.playTick();
   }
 
   useShears() {
@@ -212,6 +304,21 @@ export class PlayerController {
     if (plantHits.length > 0) {
       const plant = this.plantManager.getPlantByMesh(plantHits[0].object);
       this.plantManager.harvestPlant(plant);
+      this.playTick();
     }
+  }
+
+  playTick() {
+    if (!this.audioCtx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.audioCtx = new AudioCtx();
+    }
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.frequency.value = 880;
+    gain.gain.value = 0.1;
+    osc.connect(gain).connect(this.audioCtx.destination);
+    osc.start();
+    osc.stop(this.audioCtx.currentTime + 0.1);
   }
 }
