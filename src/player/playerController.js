@@ -20,6 +20,12 @@ export class PlayerController {
     this.keys = {};
     this.jumpRequested = false;
 
+    this.plantManager = plantManager;
+    this.raycaster = new THREE.Raycaster();
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyE') this.interact();
+    });
+
     // Setup pointer lock for mouse look
     this.domElement.addEventListener('click', () => {
       this.domElement.requestPointerLock();
@@ -107,17 +113,6 @@ export class PlayerController {
       this.body.position.y + (this.eyeHeight - this.radius),
       this.body.position.z
     );
-    this.plantManager = plantManager;
-
-    this.raycaster = new THREE.Raycaster();
-
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'KeyE') this.interact();
-    });
-  }
-
-  update(dt) {
-    // TODO: implement player movement
   }
 
   interact() {
