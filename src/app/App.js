@@ -3,6 +3,7 @@ import { PlayerController } from '../player/playerController.js';
 import { SceneManager } from '../render/sceneManager.js';
 import { Physics } from '../physics/physics.js';
 import { PlantManager } from '../plants/plantManager.js';
+import { InventoryUI } from '../ui/inventory.js';
 
 export class App {
   constructor(root) {
@@ -24,6 +25,7 @@ export class App {
     this.sceneManager = new SceneManager(this.scene, this.renderer);
     this.plantManager = new PlantManager(this.scene);
     this.player = new PlayerController(this.camera, this.renderer.domElement, this.physics, this.plantManager);
+    this.inventoryUI = new InventoryUI();
 
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
