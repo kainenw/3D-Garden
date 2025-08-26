@@ -21,6 +21,11 @@ export class PlayerController {
     this.keys = {};
     this.jumpRequested = false;
 
+    // Photo mode state
+    this.photoMode = false;
+    this.orbitAngle = 0;
+    this.orbitRadius = 3;
+
     this.plantManager = plantManager;
     this.ground = ground;
     this.raycaster = new THREE.Raycaster();
@@ -78,6 +83,11 @@ export class PlayerController {
   }
 
   onKeyDown(e) {
+    if (e.code === 'KeyP') {
+      this.togglePhotoMode();
+      return;
+    }
+    if (this.photoMode) return;
     this.keys[e.code] = true;
     if (e.code === 'Space') this.jumpRequested = true;
     if (e.code === 'Digit1') this.setTool('shovel');
@@ -86,10 +96,19 @@ export class PlayerController {
   }
 
   onKeyUp(e) {
+    if (this.photoMode) return;
     this.keys[e.code] = false;
   }
 
   update(dt) {
+    if (this.photoMode) {
+      this.orbitAngle += dt * 0.2;
+      const x = this.orbitCenter.x + Math.cos(this.orbitAngle) * this.orbitRadius;
+      const z = this.orbitCenter.z + Math.sin(this.orbitAngle) * this.orbitRadius;
+      this.camera.position.set(x, this.orbitCenter.y, z);
+      this.camera.lookAt(this.orbitCenter);
+      return;
+    }
     // Update camera rotation from accumulated yaw/pitch
     this.camera.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
 
@@ -134,6 +153,41 @@ export class PlayerController {
       this.body.position.y + (this.eyeHeight - this.radius),
       this.body.position.z
     );
+  }
+
+  togglePhotoMode() {
+    const inventory = document.getElementById('inventory');
+    this.photoMode = !this.photoMode;
+    if (this.photoMode) {
+      this.savedCameraPos = this.camera.position.clone();
+      this.savedYaw = this.yaw;
+      this.savedPitch = this.pitch;
+      this.orbitCenter = this.camera.position.clone();
+      this.orbitAngle = 0;
+      if (inventory) {
+        this.prevInventoryDisplay = inventory.style.display;
+        inventory.style.display = 'none';
+      }
+      this.toolHud.style.display = 'none';
+      this.keys = {};
+      this.savedBodyType = this.body.type;
+      this.body.type = CANNON.Body.STATIC;
+      this.body.velocity.set(0, 0, 0);
+      this.body.updateMassProperties();
+      document.exitPointerLock();
+      const offset = new THREE.Vector3(this.orbitRadius, 0, 0);
+      this.camera.position.copy(this.orbitCenter.clone().add(offset));
+      this.camera.lookAt(this.orbitCenter);
+    } else {
+      this.toolHud.style.display = '';
+      if (inventory) inventory.style.display = this.prevInventoryDisplay || 'none';
+      this.camera.position.copy(this.savedCameraPos);
+      this.yaw = this.savedYaw;
+      this.pitch = this.savedPitch;
+      this.body.type = this.savedBodyType || CANNON.Body.DYNAMIC;
+      this.body.updateMassProperties();
+      this.domElement.requestPointerLock();
+    }
   }
 
   setTool(tool) {
