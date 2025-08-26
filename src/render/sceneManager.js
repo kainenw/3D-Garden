@@ -16,6 +16,7 @@ export class SceneManager {
     this._initGround();
     this._initWalls();
     this._initNavMesh();
+    this._initWaterSources();
 
     this.elapsed = 0;
     this.sunIntensity = 0;
@@ -100,6 +101,26 @@ export class SceneManager {
     this.navMesh.rotation.x = -Math.PI / 2;
     this.navMesh.position.y = 0.01;
     this.scene.add(this.navMesh);
+  }
+
+  _initWaterSources() {
+    this.waterSources = [];
+
+    const pondGeom = new THREE.CylinderGeometry(1.2, 1.2, 0.2, 16);
+    const pondMat = new THREE.MeshStandardMaterial({ color: 0x1ca3ec });
+    const pond = new THREE.Mesh(pondGeom, pondMat);
+    pond.position.set(-5, 0.1, -5);
+    pond.receiveShadow = true;
+    this.scene.add(pond);
+    this.waterSources.push(pond);
+
+    const faucetGeom = new THREE.BoxGeometry(0.5, 1, 0.5);
+    const faucetMat = new THREE.MeshStandardMaterial({ color: 0x8888ff });
+    const faucet = new THREE.Mesh(faucetGeom, faucetMat);
+    faucet.position.set(5, 0.5, 5);
+    faucet.castShadow = true;
+    this.scene.add(faucet);
+    this.waterSources.push(faucet);
   }
 
   update(dt) {

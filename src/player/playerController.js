@@ -6,7 +6,7 @@ import { useStore } from '../state/store.js';
 // pointer-lock mouse look. Integrates with the Physics wrapper.
 
 export class PlayerController {
-  constructor(camera, domElement, physics, plantManager, ground) {
+  constructor(camera, domElement, physics, plantManager, ground, waterSources = []) {
     this.camera = camera;
     this.domElement = domElement;
     this.physics = physics;
@@ -23,9 +23,11 @@ export class PlayerController {
 
     this.plantManager = plantManager;
     this.ground = ground;
+    this.waterSources = waterSources;
     this.raycaster = new THREE.Raycaster();
     this.currentTool = 'shovel';
-    this.water = 1;
+    this.maxWater = 1;
+    this.water = this.maxWater;
     this.toolHud = document.createElement('div');
     this.toolHud.id = 'tool-hud';
     Object.assign(this.toolHud.style, {
@@ -40,6 +42,28 @@ export class PlayerController {
     });
     document.body.appendChild(this.toolHud);
     this.updateToolHud();
+
+    this.waterHud = document.createElement('div');
+    Object.assign(this.waterHud.style, {
+      position: 'fixed',
+      bottom: '10px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '200px',
+      height: '20px',
+      background: 'rgba(255,255,255,0.3)',
+      border: '1px solid white',
+      zIndex: 1000,
+    });
+    this.waterFill = document.createElement('div');
+    Object.assign(this.waterFill.style, {
+      height: '100%',
+      background: '#00aaff',
+      width: '100%',
+    });
+    this.waterHud.appendChild(this.waterFill);
+    document.body.appendChild(this.waterHud);
+    this.updateWaterHud();
     window.addEventListener('keydown', (e) => {
       if (e.code === 'KeyE') this.interact();
     });
@@ -150,7 +174,20 @@ export class PlayerController {
     this.toolHud.textContent = `Tool: ${names[this.currentTool]}`;
   }
 
+  updateWaterHud() {
+    const ratio = this.water / this.maxWater;
+    this.waterFill.style.width = `${ratio * 100}%`;
+  }
+
   interact() {
+    for (const src of this.waterSources) {
+      if (src.position.distanceTo(this.camera.position) < 2) {
+        this.water = this.maxWater;
+        this.updateWaterHud();
+        return;
+      }
+    }
+
     switch (this.currentTool) {
       case 'shovel':
         this.useShovel();
@@ -192,18 +229,19 @@ export class PlayerController {
     this.camera.getWorldDirection(forward);
     const maxDist = 2;
     const cone = Math.PI / 12;
-    let watered = 0;
+    const usage = 0.1;
     for (const plant of this.plantManager.plants) {
+      if (this.water <= 0) break;
       const toPlant = plant.position.clone().sub(origin);
       const dist = toPlant.length();
       if (dist > maxDist) continue;
       const angle = forward.angleTo(toPlant.normalize());
       if (angle < cone) {
         this.plantManager.waterPlant(plant);
-        watered++;
+        this.water = Math.max(0, this.water - usage);
       }
     }
-    this.water = Math.max(0, this.water - watered * 0.1);
+    this.updateWaterHud();
   }
 
   useShears() {

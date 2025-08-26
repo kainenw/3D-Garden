@@ -37,7 +37,8 @@ export class App {
       this.renderer.domElement,
       this.physics,
       this.plantManager,
-      this.sceneManager.ground
+      this.sceneManager.ground,
+      this.sceneManager.waterSources
     );
     this.inventoryUI = new InventoryUI();
 
