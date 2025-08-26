@@ -6,7 +6,7 @@ import { useStore } from '../state/store.js';
 // pointer-lock mouse look. Integrates with the Physics wrapper.
 
 export class PlayerController {
-  constructor(camera, domElement, physics, plantManager, ground) {
+  constructor(camera, domElement, physics, plantManager, ground, soilTiles) {
     this.camera = camera;
     this.domElement = domElement;
     this.physics = physics;
@@ -23,6 +23,7 @@ export class PlayerController {
 
     this.plantManager = plantManager;
     this.ground = ground;
+    this.soilTiles = soilTiles;
     this.raycaster = new THREE.Raycaster();
     this.currentTool = 'shovel';
     this.water = 1;
@@ -175,12 +176,18 @@ export class PlayerController {
     const groundHits = this.raycaster.intersectObject(this.ground);
     if (groundHits.length > 0) {
       const position = groundHits[0].point;
-      const seedId = 'seed_daisy';
-      const store = useStore.getState();
-      const hasSeed = store.inventory.find((i) => i.id === seedId && i.count > 0);
-      if (hasSeed) {
-        this.plantManager.plantAt(position, 'daisy');
-        store.removeItem(seedId, 1);
+      if (this.soilTiles.isPlantable(position)) {
+        const seedId = 'seed_daisy';
+        const store = useStore.getState();
+        const hasSeed = store.inventory.find((i) => i.id === seedId && i.count > 0);
+        if (hasSeed) {
+          const planted = this.plantManager.plantAt(position, 'daisy');
+          if (planted) {
+            store.removeItem(seedId, 1);
+          }
+        }
+      } else {
+        this.soilTiles.toggleAt(position);
       }
     }
   }

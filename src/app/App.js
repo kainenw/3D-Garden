@@ -6,6 +6,7 @@ import { Physics } from '../physics/physics.js';
 import { PlantManager } from '../plants/plantManager.js';
 import { InventoryUI } from '../ui/inventory.js';
 import { savePlants, loadPlants } from '../state/persistence.js';
+import { SoilTiles } from '../render/soilTiles.js';
 
 export class App {
   constructor(root) {
@@ -27,17 +28,20 @@ export class App {
 
     this.physics = new Physics();
     this.sceneManager = new SceneManager(this.scene, this.renderer, this.physics);
+    this.soilTiles = new SoilTiles(this.scene);
     this.plantManager = new PlantManager(
       this.scene,
       this.sceneManager.ground,
-      this.sceneManager
+      this.sceneManager,
+      this.soilTiles
     );
     this.player = new PlayerController(
       this.camera,
       this.renderer.domElement,
       this.physics,
       this.plantManager,
-      this.sceneManager.ground
+      this.sceneManager.ground,
+      this.soilTiles
     );
     this.inventoryUI = new InventoryUI();
 
@@ -48,6 +52,7 @@ export class App {
     loadPlants().then(plants => {
       for (const data of plants) {
         const position = new THREE.Vector3(data.position.x, data.position.y, data.position.z);
+        this.soilTiles.toggleAt(position);
         const plant = this.plantManager.plantAt(position, data.speciesId);
         if (plant) {
           plant.stageIndex = data.stageIndex;

@@ -3,10 +3,11 @@ import species from './species.json' assert { type: 'json' };
 import { useStore } from '../state/store.js';
 
 export class PlantManager {
-  constructor(scene, ground, sceneManager) {
+  constructor(scene, ground, sceneManager, soilTiles) {
     this.scene = scene;
     this.ground = ground;
     this.sceneManager = sceneManager;
+    this.soilTiles = soilTiles;
     this.species = species;
     this.plants = [];
     this.dryRate = 0.02;
@@ -16,8 +17,16 @@ export class PlantManager {
   plantAt(position, speciesId) {
     const spec = this.species[speciesId];
     if (!spec) return null;
+    if (!this.soilTiles?.isPlantable(position)) return null;
+    const clearance = spec.clearance ?? 0.5;
+    for (const p of this.plants) {
+      if (p.position.distanceTo(position) < clearance) {
+        return null;
+      }
+    }
+    const tilePos = this.soilTiles.getTileCenter(position);
     const mesh = this.createMesh(spec, 0);
-    mesh.position.copy(position);
+    mesh.position.copy(tilePos);
     this.scene.add(mesh);
     const plant = {
       speciesId,
