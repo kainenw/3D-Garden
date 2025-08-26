@@ -27,7 +27,11 @@ export class App {
 
     this.physics = new Physics();
     this.sceneManager = new SceneManager(this.scene, this.renderer, this.physics);
-    this.plantManager = new PlantManager(this.scene, this.sceneManager.ground);
+    this.plantManager = new PlantManager(
+      this.scene,
+      this.sceneManager.ground,
+      this.sceneManager
+    );
     this.player = new PlayerController(
       this.camera,
       this.renderer.domElement,
